@@ -1,0 +1,9 @@
+aws_region          = "us-east-1"
+project_name        = "finaldevops"
+environment         = "production"
+vpc_cidr            = "10.0.0.0/16"
+instance_type       = "t3.micro"
+swarm_manager_count = 1
+swarm_worker_count  = 2
+domain_name         = "yourdomain.com"
+ssh_key_name        = "finaldevops-key"

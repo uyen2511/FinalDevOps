@@ -1,0 +1,25 @@
+---
+- name: Setup Docker Swarm Cluster
+  hosts: all
+  become: yes
+  gather_facts: yes
+  roles:
+    - common
+
+- name: Install Docker
+  hosts: swarm
+  become: yes
+  roles:
+    - docker
+
+- name: Initialize Swarm Manager
+  hosts: managers
+  become: yes
+  roles:
+    - swarm-manager
+
+- name: Join Workers to Swarm
+  hosts: workers
+  become: yes
+  roles:
+    - swarm-worker

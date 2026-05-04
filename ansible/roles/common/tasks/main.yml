@@ -1,0 +1,38 @@
+---
+- name: Update system packages
+  apt:
+    update_cache: yes
+    upgrade: dist
+    cache_valid_time: 3600
+
+- name: Install required packages
+  apt:
+    name:
+      - curl
+      - wget
+      - git
+      - htop
+      - net-tools
+      - jq
+      - ca-certificates
+      - apt-transport-https
+    state: present
+
+- name: Create docker group
+  group:
+    name: docker
+    state: present
+
+- name: Create non-root user for Swarm management
+  user:
+    name: docker
+    groups: docker
+    append: yes
+
+- name: Ensure SSH directory exists for docker user
+  file:
+    path: /home/docker/.ssh
+    state: directory
+    owner: docker
+    group: docker
+    mode: '0700'

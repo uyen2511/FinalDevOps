@@ -1,0 +1,60 @@
+name: CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Get commit SHA from workflow run
+        id: commit
+        run: echo "sha=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+      
+      - name: Get ECR Login Password
+        id: ecr
+        run: echo "password=$(aws ecr get-login-password --region ${{ secrets.AWS_REGION }})" >> $GITHUB_OUTPUT
+      
+      - name: Deploy to Swarm via SSH
+        uses: appleboy/ssh-action@master
+        env:
+          ECR_PASSWORD: ${{ steps.ecr.outputs.password }}
+        with:
+          host: ${{ secrets.SWARM_MANAGER_IP }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: ECR_PASSWORD
+          script: |
+            echo "$ECR_PASSWORD" | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY_BACKEND }}
+            cd /opt/app
+            git pull origin main || true
+            export ECR_BACKEND=${{ secrets.ECR_REGISTRY_BACKEND }}/finaldevops/backend
+            export VERSION=${{ steps.commit.outputs.sha }}
+            docker stack deploy -c swarm/traefik.yml traefik
+            docker stack deploy --with-registry-auth -c swarm/app.yml app
+            docker service update --with-registry-auth --force app_backend
+      
+      - name: Verify Deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SWARM_MANAGER_IP }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sleep 10
+            docker service ls
+            docker service ps app_backend

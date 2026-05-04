@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  traefik:
+    image: traefik:latest
+    command:
+      - "--api.insecure=true"
+      - "--providers.swarm=true"
+      - "--providers.swarm.exposedByDefault=false"
+      - "--providers.swarm.network=app_app-network"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      # - "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory" # Uncomment for testing to avoid rate limits
+      - "--certificatesresolvers.myresolver.acme.email=hiennguyen@orangecaramel.online"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "traefik-certificates:/letsencrypt"
+    networks:
+      - app-network
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+networks:
+  app-network:
+    external: true
+    name: app_app-network
+
+volumes:
+  traefik-certificates:
