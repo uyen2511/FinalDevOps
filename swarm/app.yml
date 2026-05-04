@@ -1,13 +1,12 @@
 version: '3.8'
 services:
   backend:
-    image: ${ECR_BACKEND}:${VERSION}
+    image: finaldevops/backend:${VERSION:-latest}
     environment:
       - DATABASE_URL=mongodb://mongo:27017/app
       - NODE_ENV=production
       - LOG_LEVEL=info
-    ports:
-      - "3000:3000"
+
     deploy:
       replicas: 2
       restart_policy:
@@ -26,12 +25,12 @@ services:
           memory: 256M
       labels:
         traefik.enable: "true"
-        traefik.http.routers.backend.rule: "Host(`orangecaramel.online`)"
+        traefik.http.routers.backend.rule: "Host(`orangecaramel.online`) && PathPrefix(`/api`)"
         traefik.http.routers.backend.entrypoints: "websecure"
         traefik.http.routers.backend.tls.certresolver: "myresolver"
         traefik.http.services.backend.loadbalancer.server.port: "3000"
         traefik.http.middlewares.redirect-to-https.redirectscheme.scheme: "https"
-        traefik.http.routers.backend-http.rule: "Host(`orangecaramel.online`)"
+        traefik.http.routers.backend-http.rule: "Host(`orangecaramel.online`) && PathPrefix(`/api`)"
         traefik.http.routers.backend-http.entrypoints: "web"
         traefik.http.routers.backend-http.middlewares: "redirect-to-https"
         traefik.docker.network: "app_app-network"
