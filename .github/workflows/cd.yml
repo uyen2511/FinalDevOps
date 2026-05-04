@@ -41,7 +41,7 @@ jobs:
           script: |
             echo "$ECR_PASSWORD" | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY_BACKEND }}
             cd /opt/app
-            git pull origin main || true
+            git fetch origin && git checkout ${{ github.event.workflow_run.head_branch }} && git pull origin ${{ github.event.workflow_run.head_branch }} || true
             export ECR_BACKEND=${{ secrets.ECR_REGISTRY_BACKEND }}/finaldevops/backend
             export VERSION=${{ steps.commit.outputs.sha }}
             docker stack deploy -c swarm/traefik.yml traefik

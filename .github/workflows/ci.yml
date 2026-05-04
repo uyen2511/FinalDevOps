@@ -14,32 +14,31 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm install
         working-directory: ./src
-      
+
       - name: Run Linter (ESLint)
-        run: npm run lint || true
+        run: npm run lint
         working-directory: ./src
-      
+
       - name: Run Tests
-        run: npm test || true
+        run: npm test
         working-directory: ./src
-      
+
       - name: Build application
-        run: npm run build || true
+        run: npm run build
         working-directory: ./src
-      
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -51,31 +50,26 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-      
+
       - name: Build Backend Docker Image
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: finaldevops/backend
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-      
+          docker build -t ${{ secrets.ECR_REGISTRY_BACKEND }}:$IMAGE_TAG .
+
       - name: Scan Docker Image (Trivy)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ steps.login-ecr.outputs.registry }}/finaldevops/backend:${{ github.sha }}
+          image-ref: ${{ secrets.ECR_REGISTRY_BACKEND }}:${{ github.sha }}
           format: 'sarif'
           output: 'trivy-results.sarif'
-      
+
       - name: Push Docker Image to ECR
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: finaldevops/backend
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
-      
+          docker push ${{ secrets.ECR_REGISTRY_BACKEND }}:$IMAGE_TAG
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -83,3 +77,38 @@ jobs:
           path: |
             .github/workflows/cd.yml
             swarm/app.yml
+
+      # ----------------------------------------------------------------
+      # Deploy lên EC2 — chỉ chạy khi push lên main hoặc kaykay
+      # ----------------------------------------------------------------
+      - name: Deploy to Docker Swarm on EC2
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/kaykay')
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Ghi PEM key ra file tạm
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/deploy_key.pem
+          chmod 600 /tmp/deploy_key.pem
+
+          # Copy app.yml mới nhất lên server
+          scp -i /tmp/deploy_key.pem \
+            -o StrictHostKeyChecking=no \
+            swarm/app.yml \
+            ubuntu@${{ secrets.SWARM_MANAGER_IP }}:/home/ubuntu/swarm/app.yml
+
+          # SSH vào EC2, login ECR rồi deploy stack
+          ssh -i /tmp/deploy_key.pem \
+            -o StrictHostKeyChecking=no \
+            ubuntu@${{ secrets.SWARM_MANAGER_IP }} \
+            "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
+               | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY_BACKEND }} \
+             && VERSION=$IMAGE_TAG \
+                REGISTRY=${{ secrets.ECR_REGISTRY_BACKEND }} \
+                docker stack deploy \
+                  -c /home/ubuntu/swarm/app.yml \
+                  app \
+                  --with-registry-auth \
+                  --prune"
+
+          # Xoá key tạm
+          rm -f /tmp/deploy_key.pem
