@@ -23,7 +23,7 @@ EXPOSE 3000
 
 # Health check đúng endpoint
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
-  CMD wget -qO- http://localhost:3000/health || exit 1
+  CMD wget -qO- http://127.0.0.1:3000/health || exit 1
 
 #
 CMD ["node", "src/main.js"]
