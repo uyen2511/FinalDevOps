@@ -92,11 +92,19 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/deploy_key.pem
           chmod 600 /tmp/deploy_key.pem
 
+          # 1. SSH vào server tạo thư mục swarm (nếu chưa có)
+          ssh -i /tmp/deploy_key.pem \
+            -o StrictHostKeyChecking=no \
+            ubuntu@${{ secrets.SWARM_MANAGER_IP }} \
+            "mkdir -p /home/ubuntu/swarm"
+
+          # 2. Quăng file app.yml lên server
           scp -i /tmp/deploy_key.pem \
             -o StrictHostKeyChecking=no \
             swarm/app.yml \
             ubuntu@${{ secrets.SWARM_MANAGER_IP }}:/home/ubuntu/swarm/app.yml
 
+          # 3. SSH vào EC2, login ECR rồi deploy stack
           ssh -i /tmp/deploy_key.pem \
             -o StrictHostKeyChecking=no \
             ubuntu@${{ secrets.SWARM_MANAGER_IP }} \
@@ -110,4 +118,5 @@ jobs:
                   --with-registry-auth \
                   --prune"
 
+          # 4. Xoá key tạm
           rm -f /tmp/deploy_key.pem
