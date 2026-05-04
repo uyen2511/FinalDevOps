@@ -53,22 +53,26 @@ jobs:
 
       - name: Build Backend Docker Image
         env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: finaldevops/backend
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t ${{ secrets.ECR_REGISTRY_BACKEND }}:$IMAGE_TAG .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
 
       - name: Scan Docker Image (Trivy)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ secrets.ECR_REGISTRY_BACKEND }}:${{ github.sha }}
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/finaldevops/backend:${{ github.sha }}
           format: 'sarif'
           output: 'trivy-results.sarif'
 
       - name: Push Docker Image to ECR
         env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: finaldevops/backend
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker push ${{ secrets.ECR_REGISTRY_BACKEND }}:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -85,29 +89,25 @@ jobs:
         env:
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          # Ghi PEM key ra file tạm
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > /tmp/deploy_key.pem
           chmod 600 /tmp/deploy_key.pem
 
-          # Copy app.yml mới nhất lên server
           scp -i /tmp/deploy_key.pem \
             -o StrictHostKeyChecking=no \
             swarm/app.yml \
             ubuntu@${{ secrets.SWARM_MANAGER_IP }}:/home/ubuntu/swarm/app.yml
 
-          # SSH vào EC2, login ECR rồi deploy stack
           ssh -i /tmp/deploy_key.pem \
             -o StrictHostKeyChecking=no \
             ubuntu@${{ secrets.SWARM_MANAGER_IP }} \
             "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
-               | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY_BACKEND }} \
+               | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }} \
              && VERSION=$IMAGE_TAG \
-                REGISTRY=${{ secrets.ECR_REGISTRY_BACKEND }} \
+                REGISTRY=${{ steps.login-ecr.outputs.registry }} \
                 docker stack deploy \
                   -c /home/ubuntu/swarm/app.yml \
                   app \
                   --with-registry-auth \
                   --prune"
 
-          # Xoá key tạm
           rm -f /tmp/deploy_key.pem
