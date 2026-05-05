@@ -42,7 +42,10 @@ jobs:
             echo "$ECR_PASSWORD" | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY_BACKEND }}
             sudo mkdir -p /opt/app && sudo chown ubuntu:ubuntu /opt/app
             cd /opt/app
-            git pull origin main || git clone https://github.com/${{ github.repository }} .
+            
+            # Force sync with GitHub (Fixes Git Conflict)
+            git fetch --all
+            git reset --hard origin/main
             
             # Ensure overlay network exists
             docker network create --driver overlay --attachable app_app-network || true
@@ -50,10 +53,10 @@ jobs:
             export ECR_BACKEND=${{ secrets.ECR_REGISTRY_BACKEND }}/finaldevops/backend
             export VERSION=${{ steps.commit.outputs.sha }}
             
-            # Deploy stacks
-            docker stack deploy -c swarm/traefik.yml traefik
+            # Deploy stacks with registry auth
+            docker stack deploy --with-registry-auth -c swarm/traefik.yml traefik
             docker stack deploy --with-registry-auth -c swarm/app.yml app
-            docker stack deploy -c swarm/monitoring.yml monitoring
+            docker stack deploy --with-registry-auth -c swarm/monitoring.yml monitoring
             
             # Force update to ensure latest image is used
             docker service update --with-registry-auth --image $ECR_BACKEND:$VERSION app_backend
