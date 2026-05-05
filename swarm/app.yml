@@ -3,7 +3,7 @@ services:
   backend:
     image: ${REGISTRY}/finaldevops/backend:${VERSION:-latest}
     environment:
-      - DATABASE_URL=mongodb://mongo:27017/app
+      - MONGO_URI=mongodb://mongo:27017/app
       - NODE_ENV=production
       - LOG_LEVEL=info
 
