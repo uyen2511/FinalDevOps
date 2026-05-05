@@ -3,6 +3,8 @@ version: "3.8"
 services:
   traefik:
     image: traefik:v3.3
+    environment:
+      - DOCKER_API_VERSION=1.41
     command:
       - "--api.insecure=true"
       - "--providers.swarm=true"
