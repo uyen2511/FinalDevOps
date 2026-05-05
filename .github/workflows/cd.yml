@@ -49,9 +49,6 @@ jobs:
             docker stack deploy -c swarm/traefik.yml traefik
             docker stack deploy --with-registry-auth -c swarm/app.yml app
             docker stack deploy -c swarm/monitoring.yml monitoring
-            
-            # Force update to ensure latest image is used
-            docker service update --with-registry-auth --image $ECR_BACKEND:$VERSION app_backend
       
       - name: Verify Deployment
         uses: appleboy/ssh-action@master
