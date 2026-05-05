@@ -40,9 +40,9 @@ jobs:
           envs: ECR_PASSWORD
           script: |
             echo "$ECR_PASSWORD" | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY_BACKEND }}
-            cd /opt/app
+            cd ~/FinalDevOps
             git fetch origin && git checkout ${{ github.event.workflow_run.head_branch }} && git pull origin ${{ github.event.workflow_run.head_branch }} || true
-            export ECR_BACKEND=${{ secrets.ECR_REGISTRY_BACKEND }}/finaldevops/backend
+            export REGISTRY=${{ secrets.ECR_REGISTRY_BACKEND }}
             export VERSION=${{ steps.commit.outputs.sha }}
             docker stack deploy -c swarm/traefik.yml traefik
             docker stack deploy --with-registry-auth -c swarm/app.yml app
