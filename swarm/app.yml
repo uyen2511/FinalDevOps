@@ -3,44 +3,28 @@ services:
   backend:
     image: ${ECR_BACKEND}:${VERSION}
     environment:
-      - DATABASE_URL=mongodb://mongo:27017/app
+      - MONGO_URI=mongodb://mongo:27017/app
       - NODE_ENV=production
       - LOG_LEVEL=info
-    ports:
-      - "3000:3000"
     deploy:
       replicas: 2
       restart_policy:
         condition: on-failure
-        delay: 5s
-        max_attempts: 3
       update_config:
         parallelism: 1
         delay: 10s
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
       labels:
         traefik.enable: "true"
         traefik.http.routers.backend.rule: "Host(`orangecaramel.online`)"
         traefik.http.routers.backend.entrypoints: "websecure"
         traefik.http.routers.backend.tls.certresolver: "myresolver"
         traefik.http.services.backend.loadbalancer.server.port: "3000"
-        traefik.http.middlewares.redirect-to-https.redirectscheme.scheme: "https"
-        traefik.http.routers.backend-http.rule: "Host(`orangecaramel.online`)"
-        traefik.http.routers.backend-http.entrypoints: "web"
-        traefik.http.routers.backend-http.middlewares: "redirect-to-https"
         traefik.docker.network: "app_app-network"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
       timeout: 3s
       retries: 3
-      start_period: 10s
     networks:
       - app-network
 
