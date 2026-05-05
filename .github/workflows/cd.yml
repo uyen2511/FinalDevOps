@@ -46,7 +46,7 @@ jobs:
             export VERSION=${{ steps.commit.outputs.sha }}
             docker stack deploy -c swarm/traefik.yml traefik
             docker stack deploy --with-registry-auth -c swarm/app.yml app
-            docker service update --with-registry-auth --force app_backend
+            docker stack deploy -c swarm/monitoring.yml monitoring
       
       - name: Verify Deployment
         uses: appleboy/ssh-action@master
