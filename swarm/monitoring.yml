@@ -5,7 +5,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - /opt/app/swarm/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -14,8 +14,16 @@ services:
       placement:
         constraints:
           - node.role == manager
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.prometheus.rule=Host(`prometheus.orangecaramel.online`)"
+        - "traefik.http.routers.prometheus.entrypoints=websecure"
+        - "traefik.http.routers.prometheus.tls.certresolver=myresolver"
+        - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+        - "traefik.http.services.prometheus.loadbalancer.server.network=app_app-network"
     networks:
       - monitoring
+      - app-network
 
   grafana:
     image: grafana/grafana:latest
@@ -26,12 +34,22 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards
     deploy:
       placement:
         constraints:
           - node.role == manager
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.grafana.rule=Host(`grafana.orangecaramel.online`)"
+        - "traefik.http.routers.grafana.entrypoints=websecure"
+        - "traefik.http.routers.grafana.tls.certresolver=myresolver"
+        - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+        - "traefik.http.services.grafana.loadbalancer.server.network=app_app-network"
     networks:
       - monitoring
+      - app-network
 
   node-exporter:
     image: prom/node-exporter:latest
@@ -58,3 +76,6 @@ volumes:
 networks:
   monitoring:
     driver: overlay
+  app-network:
+    external: true
+    name: app_app-network

@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows: ["CI Pipeline"]
     types: [completed]
-    branches: [main]
+    branches: ["main", "kaykay"]
 
 jobs:
   deploy:
@@ -40,14 +40,9 @@ jobs:
           envs: ECR_PASSWORD
           script: |
             echo "$ECR_PASSWORD" | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY_BACKEND }}
-            sudo mkdir -p /opt/app && sudo chown ubuntu:ubuntu /opt/app
-            cd /opt/app
-            git pull origin main || git clone https://github.com/${{ github.repository }} .
-            
-            # Ensure overlay network exists
-            docker network create --driver overlay --attachable app_app-network || true
-            
-            export ECR_BACKEND=${{ secrets.ECR_REGISTRY_BACKEND }}/finaldevops/backend
+            cd ~/FinalDevOps
+            git fetch origin && git checkout ${{ github.event.workflow_run.head_branch }} && git pull origin ${{ github.event.workflow_run.head_branch }} || true
+            export REGISTRY=${{ secrets.ECR_REGISTRY_BACKEND }}
             export VERSION=${{ steps.commit.outputs.sha }}
             
             # Deploy stacks

@@ -77,8 +77,8 @@ async function start() {
 
   await dataSource.init(usingMongo);
 
-  app.listen(PORT, () => {
-    console.log(`Running at http://localhost:${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Running at http://0.0.0.0:${PORT}`);
     console.log(`Pod: ${os.hostname()}`);
     console.log(`Data source: ${dataSource.isMongo ? 'mongodb' : 'memory'}`);
   });

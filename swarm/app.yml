@@ -1,11 +1,12 @@
 version: '3.8'
 services:
   backend:
-    image: ${ECR_BACKEND}:${VERSION}
+    image: ${REGISTRY}/finaldevops/backend:${VERSION:-latest}
     environment:
       - MONGO_URI=mongodb://mongo:27017/app
       - NODE_ENV=production
       - LOG_LEVEL=info
+
     deploy:
       replicas: 2
       restart_policy:
@@ -14,17 +15,26 @@ services:
         parallelism: 1
         delay: 10s
       labels:
-        traefik.enable: "true"
-        traefik.http.routers.backend.rule: "Host(`orangecaramel.online`)"
-        traefik.http.routers.backend.entrypoints: "websecure"
-        traefik.http.routers.backend.tls.certresolver: "myresolver"
-        traefik.http.services.backend.loadbalancer.server.port: "3000"
-        traefik.docker.network: "app_app-network"
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
+        - "traefik.enable=true"
+        # HTTPS router
+        - "traefik.http.routers.backend.rule=Host(`orangecaramel.online`)"
+        - "traefik.http.routers.backend.entrypoints=websecure"
+        - "traefik.http.routers.backend.tls.certresolver=myresolver"
+        - "traefik.http.routers.backend.service=backend"
+        # HTTP router (redirect to HTTPS)
+        - "traefik.http.routers.backend-http.rule=Host(`orangecaramel.online`)"
+        - "traefik.http.routers.backend-http.entrypoints=web"
+        - "traefik.http.routers.backend-http.middlewares=redirect-to-https"
+        - "traefik.http.routers.backend-http.service=backend"
+        # Service definition
+        - "traefik.http.services.backend.loadbalancer.server.port=3000"
+        - "traefik.http.services.backend.loadbalancer.server.scheme=http"
+        # Middleware
+        - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+        - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+        # Network - đúng syntax Traefik v3
+        - "traefik.http.services.backend.loadbalancer.server.network=app_app-network"
+    
     networks:
       - app-network
 

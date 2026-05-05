@@ -9,12 +9,16 @@ if [ -z "$MANAGER_IP" ] || [ -z "$DOMAIN" ]; then
   exit 1
 fi
 
+echo "Building Docker image..."
+docker build -t finaldevops/backend:$(git rev-parse --short HEAD) .
+
 echo "Deploying to Swarm..."
 
 ssh -i ~/.ssh/finaldevops-key.pem ubuntu@$MANAGER_IP << 'EOF'
 cd /opt/app
 git pull origin main
 export VERSION=$(git rev-parse --short HEAD)
+export ECR_BACKEND="finaldevops/backend"
 docker stack deploy -c swarm/app.yml app
 docker service ls
 EOF
