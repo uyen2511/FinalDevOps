@@ -76,6 +76,8 @@ volumes:
 networks:
   monitoring:
     driver: overlay
+    driver_opts:
+      com.docker.network.driver.mtu: "1400"
   app-network:
     external: true
     name: app_app-network
