@@ -52,7 +52,7 @@ services:
         max_attempts: 3
       placement:
         constraints:
-          - node.role == worker
+          - node.role == manager
     networks:
       - app-network
 
