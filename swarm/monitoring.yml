@@ -20,7 +20,7 @@ services:
         - "traefik.http.routers.prometheus.entrypoints=websecure"
         - "traefik.http.routers.prometheus.tls.certresolver=myresolver"
         - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
-        - "traefik.http.services.prometheus.loadbalancer.server.network=app_app-network"
+        - "traefik.docker.network=app_app-network"
     networks:
       - monitoring
       - app-network
@@ -46,7 +46,7 @@ services:
         - "traefik.http.routers.grafana.entrypoints=websecure"
         - "traefik.http.routers.grafana.tls.certresolver=myresolver"
         - "traefik.http.services.grafana.loadbalancer.server.port=3000"
-        - "traefik.http.services.grafana.loadbalancer.server.network=app_app-network"
+        - "traefik.docker.network=app_app-network"
     networks:
       - monitoring
       - app-network

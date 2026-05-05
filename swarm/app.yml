@@ -32,8 +32,8 @@ services:
         # Middleware
         - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
         - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
-        # Network - đúng syntax Traefik v3
-        - "traefik.http.services.backend.loadbalancer.server.network=app_app-network"
+        # Network
+        - "traefik.docker.network=app_app-network"
     
     networks:
       - app-network
