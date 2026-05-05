@@ -38,6 +38,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: ECR_PASSWORD
+          command_timeout: 5m
           script: |
             echo "$ECR_PASSWORD" | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY_BACKEND }}
             cd ~/FinalDevOps
@@ -47,7 +48,7 @@ jobs:
             
             # Deploy stacks
             docker stack deploy --detach=true -c swarm/traefik.yml traefik
-            docker stack deploy --detach=true --with-registry-auth -c swarm/app.yml app
+            docker stack deploy --detach=true --resolve-image=never --with-registry-auth -c swarm/app.yml app
             docker stack deploy --detach=true -c swarm/monitoring.yml monitoring
       
       - name: Verify Deployment
