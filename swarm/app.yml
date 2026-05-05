@@ -25,15 +25,24 @@ services:
           memory: 256M
       labels:
         - "traefik.enable=true"
+        # HTTPS router
         - "traefik.http.routers.backend.rule=Host(`orangecaramel.online`)"
         - "traefik.http.routers.backend.entrypoints=websecure"
         - "traefik.http.routers.backend.tls.certresolver=myresolver"
-        - "traefik.http.services.backend.loadbalancer.server.port=3000"
-        - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+        - "traefik.http.routers.backend.service=backend"
+        # HTTP router (redirect to HTTPS)
         - "traefik.http.routers.backend-http.rule=Host(`orangecaramel.online`)"
         - "traefik.http.routers.backend-http.entrypoints=web"
         - "traefik.http.routers.backend-http.middlewares=redirect-to-https"
-        - "traefik.docker.network=app_app-network"
+        - "traefik.http.routers.backend-http.service=backend"
+        # Service definition
+        - "traefik.http.services.backend.loadbalancer.server.port=3000"
+        - "traefik.http.services.backend.loadbalancer.server.scheme=http"
+        # Middleware
+        - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+        - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+        # Network - đúng syntax Traefik v3
+        - "traefik.http.services.backend.loadbalancer.server.network=app_app-network"
     
     networks:
       - app-network
