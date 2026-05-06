@@ -9,7 +9,7 @@ RUN addgroup -S nodejs && adduser -S nodejs -G nodejs
 COPY src/package*.json ./
 
 # Install deps
-RUN npm install --omit=dev && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
 # Copy source code
 COPY src/ ./src/
