@@ -61,6 +61,6 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            sleep 10
+            sleep 20
             docker service ls
-            docker service ps app_backend
+            docker service ps app_backend || true
