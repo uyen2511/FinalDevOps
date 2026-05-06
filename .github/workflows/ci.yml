@@ -5,11 +5,9 @@ on:
     branches:
       - main
       - develop
-      - kaykay
   pull_request:
     branches:
       - main
-      - kaykay
 
 jobs:
   build:
