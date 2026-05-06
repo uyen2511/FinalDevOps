@@ -20,7 +20,7 @@ variable "vpc_cidr" {
 
 variable "instance_type" {
   description = "EC2 instance type"
-  default     = "t2.medium"
+  default     = "t3.small"
 }
 
 variable "swarm_manager_count" {
@@ -35,7 +35,7 @@ variable "swarm_worker_count" {
 
 variable "domain_name" {
   description = "Domain name"
-  default     = "yourdomain.com"
+  default     = "orangecaramel.online"
 }
 
 variable "ssh_key_name" {
