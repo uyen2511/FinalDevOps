@@ -4,7 +4,9 @@
   "main": "main.js",
   "scripts": {
     "start": "node main.js",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "echo \"Success: no tests yet\" && exit 0",
+    "build": "echo \"No build step required\" && exit 0"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
