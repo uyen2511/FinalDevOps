@@ -46,6 +46,9 @@ jobs:
             export REGISTRY=${{ secrets.ECR_REGISTRY_BACKEND }}
             export VERSION=${{ steps.commit.outputs.sha }}
             
+            # Tạo network trước (bỏ qua lỗi nếu đã tồn tại)
+            docker network create --driver overlay --attachable app_app-network 2>/dev/null || true
+            
             # Deploy stacks
             docker stack deploy --detach=true -c swarm/traefik.yml traefik
             docker stack deploy --detach=true --resolve-image=never --with-registry-auth -c swarm/app.yml app
